@@ -9,4 +9,14 @@ public class Node {
         T = t;
         this.BC = BC;
     }
+
+    @Override
+    public String toString() {
+        return "Node{" +
+                "X=" + X +
+                ", Y=" + Y +
+                ", T=" + T +
+                ", BC=" + BC +
+                '}';
+    }
 }

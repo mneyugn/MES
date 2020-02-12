@@ -1,4 +1,3 @@
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 
@@ -12,9 +11,9 @@ final class ReadFromGrid {
     static Double ambientTemperature;  // tempratura otoczenia
     static Double alfa;
     static Double H;
-    static Double B;
-    static Double N_H;
-    static Double N_B;
+    static Double W;
+    static Integer nH;
+    static Integer nW;
     static Double cw;
     static Double k;
     static Double ro;
@@ -32,9 +31,9 @@ final class ReadFromGrid {
         ambientTemperature = ((Long)jo.get("ambient temperature")).doubleValue();
         alfa = ((Long)jo.get("alfa")).doubleValue();
         H = (Double)jo.get("H");
-        B = (Double)jo.get("B");
-        N_H = ((Long)jo.get("N_H")).doubleValue();
-        N_B = ((Long)jo.get("N_B")).doubleValue();
+        W = (Double)jo.get("W");
+        nH = ((Long)jo.get("nH")).intValue();
+        nW = ((Long)jo.get("nW")).intValue();
         cw = ((Long)jo.get("specific heat")).doubleValue(); // ciepło właściwe
         k = ((Long)jo.get("conductivity")).doubleValue(); // przewodność
         ro = ((Long)jo.get("density")).doubleValue(); // gęstość
