@@ -1,8 +1,9 @@
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
+
 import java.io.FileReader;
 import java.io.IOException;
-
-import org.json.simple.JSONObject;
-import org.json.simple.parser.*;
 
 final class ReadFromGrid {
     static Double t0;  // temperatura początkowa
@@ -15,7 +16,7 @@ final class ReadFromGrid {
     static Integer nH;
     static Integer nW;
     static Double cw;
-    static Double k;
+    static Double k; //
     static Double ro;
 
     ReadFromGrid(String path) throws IOException, ParseException {

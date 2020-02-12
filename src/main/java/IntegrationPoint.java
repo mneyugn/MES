@@ -22,4 +22,12 @@ public class IntegrationPoint {
     public double getEta() {
         return eta;
     }
+
+    public double getKsiWeight() {
+        return ksiWeight;
+    }
+
+    public double getEtaWeight() {
+        return etaWeight;
+    }
 }

@@ -8,7 +8,7 @@ public class UniversalElement {
     static double[][] dNdKsiMatrix;
     static double[][] dNdEtaMatrix;
     static double[][] NiMatrix;
-    private IntegrationPoint[] integrationPoints;
+    static IntegrationPoint[] integrationPoints;
 
 
     public UniversalElement() {
