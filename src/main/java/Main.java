@@ -1,4 +1,3 @@
-import org.apache.commons.math3.linear.*;
 import org.json.simple.parser.ParseException;
 
 import java.io.IOException;
@@ -20,11 +19,12 @@ public class Main {
         grid.getNodeAt(16);
         grid.getElementAt(14);
 
+//
+//        double[][] matrixData2 = { {1d,2d}, {2d,5d}};
+//        RealMatrix n = new Array2DRowRealMatrix(matrixData2);
+//        System.out.println(new LUDecomposition(n).getDeterminant());
+//        System.out.println(new LUDecomposition(n).getSolver());
 
-        double[][] matrixData2 = { {1d,2d}, {2d,5d}};
-        RealMatrix n = new Array2DRowRealMatrix(matrixData2);
-        System.out.println(n.toString());
-        System.out.println(new LUDecomposition(n).getSolver().getInverse());
 
 
 

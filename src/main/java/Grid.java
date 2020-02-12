@@ -23,8 +23,10 @@ public class Grid {
         this.dH = globalData.dH;
         this.dW = globalData.dW;
         universalElement = new UniversalElement();
-//        System.out.println(universalElement.toString());
+
         universalElement.print();
+
+        System.out.println(universalElement.getElement(1, 2));
         createGrid(globalData.H, globalData.W, globalData.nH, globalData.nW, globalData.nN, globalData.nE, globalData.t0);
     }
 
@@ -48,7 +50,8 @@ public class Grid {
         for (double x = 0; x <= W; x += dW)
             for (double y = 0; y <= H; y += dH) {
                 bc = isBoundary(x, y);
-                nodes[index++] = new Node(x, y, t0, bc);
+                nodes[index] = new Node(x, y, t0, bc);
+                index++;
             }
     }
 
@@ -58,6 +61,7 @@ public class Grid {
 
         int noElementsW = nW - 1;
         int noElementsH = nH - 1;
+        Node[] nodesOfElement;
         for (int i = 0; i < noElementsW; i++) {
             for (int j = 0; j < noElementsH; j++) {
                 int n1 = i * nH + j;            // bottom-left
@@ -65,7 +69,8 @@ public class Grid {
                 int n3 = (i + 1) * nH + j + 1;  // top-right
                 int n4 = i * nH + j + 1;        // top-right
 
-                elements[index++] = new Element(n1, n2, n3, n4);
+                nodesOfElement = new Node[]{nodes[n1], nodes[n2], nodes[n3], nodes[n4]};
+                elements[index++] = new Element(n1, n2, n3, n4, nodesOfElement);
             }
         }
     }
@@ -82,6 +87,14 @@ public class Grid {
 
     void getElementAt(int n) {
         System.out.println(elements[n]);
+    }
+
+    public double getXOfNodeID(int id) {
+        return nodes[id].getX();
+    }
+
+    public double getYOfNodeID(int id) {
+        return nodes[id].getY();
     }
 
 }

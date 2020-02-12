@@ -2,20 +2,22 @@ import java.util.Arrays;
 
 import static java.lang.Math.sqrt;
 
+
 public class UniversalElement {
 
-    double[][] dNdKsiMatrix;
-    double[][] dNdEtaMatrix;
-    double[][] NiMatrix;
-    IntegrationPoint[] integrationPoints;
+    static double[][] dNdKsiMatrix;
+    static double[][] dNdEtaMatrix;
+    static double[][] NiMatrix;
+    private IntegrationPoint[] integrationPoints;
+
 
     public UniversalElement() {
-        this.dNdKsiMatrix = new double[4][4];
-        this.dNdEtaMatrix = new double[4][4];
-        this.NiMatrix = new double[4][4];
+        dNdKsiMatrix = new double[GlobalData.NUM_OF_INTEGRATION_POINTS_2D][GlobalData.NUM_OF_SHAPE_FUNCTIONS];
+        dNdEtaMatrix = new double[GlobalData.NUM_OF_INTEGRATION_POINTS_2D][GlobalData.NUM_OF_SHAPE_FUNCTIONS];
+        NiMatrix = new double[GlobalData.NUM_OF_INTEGRATION_POINTS_2D][GlobalData.NUM_OF_SHAPE_FUNCTIONS];
 
         double iPoint1 = -1 / sqrt(3);
-        double iPoint2 =  1 / sqrt(3);
+        double iPoint2 = 1 / sqrt(3);
 
         integrationPoints = new IntegrationPoint[]{
                 new IntegrationPoint(iPoint1, iPoint1),
@@ -31,15 +33,15 @@ public class UniversalElement {
             double ksi = integrationPoints[i].getKsi();
             double eta = integrationPoints[i].getEta();
 
-            dNdKsiMatrix[i][0] = -0.25 * (1 - eta);
-            dNdKsiMatrix[i][1] = 0.25 * (1 - eta);
-            dNdKsiMatrix[i][2] = 0.25 * (1 + eta);
-            dNdKsiMatrix[i][3] = -0.25 * (1 + eta);
+            dNdKsiMatrix[0][i] = -0.25 * (1 - eta);
+            dNdKsiMatrix[1][i] = 0.25 * (1 - eta);
+            dNdKsiMatrix[2][i] = 0.25 * (1 + eta);
+            dNdKsiMatrix[3][i] = -0.25 * (1 + eta);
 
-            dNdEtaMatrix[i][0] = -0.25 * (1 - ksi);
-            dNdEtaMatrix[i][1] = -0.25 * (1 + ksi);
-            dNdEtaMatrix[i][2] = 0.25 * (1 + ksi);
-            dNdEtaMatrix[i][3] = 0.25 * (1 - ksi);
+            dNdEtaMatrix[0][i] = -0.25 * (1 - ksi);
+            dNdEtaMatrix[1][i] = -0.25 * (1 + ksi);
+            dNdEtaMatrix[2][i] = 0.25 * (1 + ksi);
+            dNdEtaMatrix[3][i] = 0.25 * (1 - ksi);
 
             NiMatrix[i][0] = localN1(integrationPoints[i]);
             NiMatrix[i][1] = localN2(integrationPoints[i]);
@@ -101,7 +103,10 @@ public class UniversalElement {
             }
             System.out.println();
         }
-
-
     }
+
+    double getElement(int pc, int fk) {
+        return NiMatrix[pc - 1][fk - 1];
+    }
+
 }

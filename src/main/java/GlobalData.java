@@ -9,7 +9,8 @@ public class GlobalData {
     double dH;
     double dW;
     double t0;
-
+    public static final int NUM_OF_INTEGRATION_POINTS_2D = 4;
+    public static final int NUM_OF_SHAPE_FUNCTIONS = 4;
 
     public GlobalData(double h, double w, int nH, int nW, double t0) {
         H = h;
@@ -22,7 +23,7 @@ public class GlobalData {
         dH = H / (nH - 1);
         dW = W / (nW - 1);
 
-        }
+    }
 
 
 }
