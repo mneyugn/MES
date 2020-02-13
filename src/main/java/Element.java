@@ -3,6 +3,9 @@ import org.apache.commons.math3.linear.RealMatrix;
 
 import java.util.Arrays;
 
+import static java.lang.Math.pow;
+import static java.lang.Math.sqrt;
+
 public class Element {
     private static final int NUM_OF_INTEGRATION_POINTS_2_D = GlobalData.NUM_OF_INTEGRATION_POINTS_2D;
     private static final int NUM_OF_SHAPE_FUNCTIONS = GlobalData.NUM_OF_SHAPE_FUNCTIONS;
@@ -14,6 +17,7 @@ public class Element {
     private double[] detJ2D;
     private double[][] localHMatrix;
     private double[][] localCMatrix;
+    private double[] localPVector;
 
 
     public double[][] getLocalHMatrix() {
@@ -35,7 +39,15 @@ public class Element {
 
     private void calculateAll() {
         calculateJacobians2D();
-        calculateLocalHMatrix();
+        RealMatrix HWithoutHbc = calculateLocalHMatrixWithoutHbc();
+
+//        for (int i = 0; i < 4; i++) {
+//            for (int j = 0; j < 4; j++) {
+//                System.out.print(HWithoutHbc.getData()[i][j]+"\t\t");
+//            }
+//            System.out.println();
+//        }
+        calculateHbc(HWithoutHbc);
         calculateLocalCMatrix();
     }
 
@@ -59,36 +71,16 @@ public class Element {
                 jacobian[i][1][0] += UniversalElement.dNdEtaMatrix[i][j] * nodes[j].getX();
             }
 
-
             //  dy/deta
             for (int j = 0; j < numOfShapeFunctions; j++) {
                 jacobian[i][1][1] += UniversalElement.dNdEtaMatrix[i][j] * nodes[j].getY();
             }
-
             // Jacobian 2D
             detJ2D[i] = jacobian[i][0][0] * jacobian[i][1][1] - jacobian[i][0][1] * jacobian[i][1][0];
         }
     }
 
-    void print() {
-        for (double v : detJ2D) {
-            System.out.println(v + "\t\t");
-        }
-    }
-
-    void printJacobian() {
-        for (double[][] doubles : jacobian) {
-            for (double[] aDouble : doubles) {
-                for (double v : aDouble) {
-                    System.out.print(v + "\t\t");
-                }
-                System.out.println();
-            }
-            System.out.println();
-        }
-    }
-
-    void calculateLocalHMatrix() {
+    private RealMatrix calculateLocalHMatrixWithoutHbc() {
         // k( {dN/dx}{dN/dx}T
         // dN/dx =
         RealMatrix[] subLocalHMatrixTmp = new RealMatrix[4];
@@ -113,18 +105,19 @@ public class Element {
             subLocalHMatrixTmp[i] = resultHMatrix;
         }
 
-        double w1, w2;
+        double weight1, weight2;
         RealMatrix subLocalHMatrixSum = new Array2DRowRealMatrix(new double[4][4]);
         for (int i = 0; i < NUM_OF_INTEGRATION_POINTS_2_D; i++) {
-            w1 = UniversalElement.integrationPoints[i].getWeight1();
-            w2 = UniversalElement.integrationPoints[i].getWeight2();
+            weight1 = UniversalElement.integrationPoints[i].getWeight1();
+            weight2 = UniversalElement.integrationPoints[i].getWeight2();
 
-            subLocalHMatrixSum = subLocalHMatrixSum.add(subLocalHMatrixTmp[i].scalarMultiply(w1 * w2 * detJ2D[i]));
+            subLocalHMatrixSum = subLocalHMatrixSum.add(subLocalHMatrixTmp[i].scalarMultiply(weight1 * weight2 * detJ2D[i]));
         }
 
         //multiplication by k
-        localHMatrix = subLocalHMatrixSum.scalarMultiply(GlobalData.k).getData();
+        return subLocalHMatrixSum.scalarMultiply(GlobalData.k);
     }
+
 
     private double dNdX(int pointIndex, int shapeFunctionIndex) {
         // dNi/dx = 1/detJ * (dy/dEta * dNi/dKsi - dy/dKsi * dNi/dEta)
@@ -135,6 +128,7 @@ public class Element {
                                 UniversalElement.dNdEtaMatrix[pointIndex][shapeFunctionIndex]);
     }
 
+
     private double dNdY(int pointIndex, int shapeFunctionIndex) {
         // dNi/dy = 1/detJ * (- dx/dEta * dNi/dKsi + dx/dKsi * dNi/dEta)
         return 1 / detJ2D[pointIndex] *
@@ -143,6 +137,7 @@ public class Element {
                         jacobian[pointIndex][0][0] *
                                 UniversalElement.dNdEtaMatrix[pointIndex][shapeFunctionIndex]);
     }
+
 
     private void calculateLocalCMatrix() {
         RealMatrix subLocalCMatrixSumTmp = new Array2DRowRealMatrix(new double[4][4]);
@@ -158,28 +153,30 @@ public class Element {
         localCMatrix = subLocalCMatrixSumTmp.scalarMultiply(GlobalData.specificHeat * GlobalData.ro).getData();
     }
 
+
     void calculatePVector() {
+
 
     }
 
-    void calculateHbc() {
+    void calculateHbc(RealMatrix localH) {
         RealMatrix localHbcMatrix = new Array2DRowRealMatrix(new double[4][4]);
 
         IntegrationPoint[][] bcpc = new IntegrationPoint[4][2];
         for (int i = 0; i < 4; i++) {
             bcpc[i] = new IntegrationPoint[2];
         }
-        bcpc[0][0] = new IntegrationPoint(-1 / Math.sqrt(3), -1);
-        bcpc[0][1] = new IntegrationPoint(1 / Math.sqrt(3), -1);
+        bcpc[0][0] = new IntegrationPoint(-1 / sqrt(3), -1);
+        bcpc[0][1] = new IntegrationPoint(1 / sqrt(3), -1);
 
-        bcpc[1][0] = new IntegrationPoint(1, -1 / Math.sqrt(3));
-        bcpc[1][1] = new IntegrationPoint(1, 1 / Math.sqrt(3));
+        bcpc[1][0] = new IntegrationPoint(1, -1 / sqrt(3));
+        bcpc[1][1] = new IntegrationPoint(1, 1 / sqrt(3));
 
-        bcpc[2][0] = new IntegrationPoint(1 / Math.sqrt(3), 1);
-        bcpc[2][1] = new IntegrationPoint(-1 / Math.sqrt(3), 1);
+        bcpc[2][0] = new IntegrationPoint(1 / sqrt(3), 1);
+        bcpc[2][1] = new IntegrationPoint(-1 / sqrt(3), 1);
 
-        bcpc[3][0] = new IntegrationPoint(-1, 1 / Math.sqrt(3));
-        bcpc[3][1] = new IntegrationPoint(-1, -1 / Math.sqrt(3));
+        bcpc[3][0] = new IntegrationPoint(-1, 1 / sqrt(3));
+        bcpc[3][1] = new IntegrationPoint(-1, -1 / sqrt(3));
 
 
         for (int i = 0; i < NUM_OF_SIDES_IN_ELEMENT; i++) {
@@ -187,26 +184,68 @@ public class Element {
                 Node bc1 = nodes[i];
                 Node bc2 = nodes[(i + 1) % 4];
 
-                double distance = Math.sqrt(Math.pow((bc1.getX() - bc2.getX()), 2) + Math.pow((bc1.getY() - bc2.getY()), 2)) / 2;
-                double detJ1D = distance / 2;
+                double deltaX = sqrt(pow((bc1.getX() - bc2.getX()), 2) + pow((bc1.getY() - bc2.getY()), 2)) / 2;
+                double detJ1D = deltaX / 2;
 
                 // Hbc = alfa {N}{N}T * w
                 // Hbc1     {N}{N}T * w
                 RealMatrix subHbcMatrix1tmp = new Array2DRowRealMatrix(UniversalElement.niValuesVector(bcpc[i][0]));
                 RealMatrix subHhbcResultMatrix1Tmp = subHbcMatrix1tmp.multiply(subHbcMatrix1tmp.transpose()).scalarMultiply(bcpc[i][0].getWeight1());
+
                 // Hbc2     {N}{N}T * w
                 RealMatrix subHbcMatrix2tmp = new Array2DRowRealMatrix(UniversalElement.niValuesVector(bcpc[i][1]));
-                RealMatrix subHhbcResultMatrix2Tmp = subHbcMatrix1tmp.multiply(subHbcMatrix2tmp.transpose()).scalarMultiply(bcpc[i][1].getWeight2());
+                RealMatrix subHbcResultMatrix2Tmp = subHbcMatrix2tmp.multiply(subHbcMatrix2tmp.transpose()).scalarMultiply(bcpc[i][1].getWeight2());
 
                 // alfa*(Hbc1 + Hbc2)*detJ1D
-                RealMatrix hbcForCurrenSide = subHhbcResultMatrix1Tmp.add(subHhbcResultMatrix2Tmp);
-                hbcForCurrenSide = hbcForCurrenSide.scalarMultiply(GlobalData.alfa * detJ1D);
+                RealMatrix hbcForCurrenSide = subHhbcResultMatrix1Tmp.add(subHbcResultMatrix2Tmp);
+                hbcForCurrenSide = hbcForCurrenSide.scalarMultiply(GlobalData.alfa *detJ1D);
 
                 // localHbcMatrix - sum of sub-local Hbc matrices
                 localHbcMatrix = localHbcMatrix.add(hbcForCurrenSide);
+
+
+                // P Vector
+
+
             }
-            local
+        }
+
+
+
+        System.out.println();
+        localHMatrix = localH.add(localHbcMatrix).getData();
+        for (int k = 0; k < 4; k++) {
+            for (int j = 0; j < 4; j++) {
+                System.out.print(localHbcMatrix.getData()[k][j] + "\t\t");
+            }
+            System.out.println();
         }
     }
 
+
+    void print() {
+        for (double v : detJ2D) {
+            System.out.println(v + "\t\t");
+        }
+    }
+
+    void printJacobian() {
+        for (double[][] doubles : jacobian) {
+            for (double[] aDouble : doubles) {
+                for (double v : aDouble) {
+                    System.out.print(v + "\t\t");
+                }
+                System.out.println();
+            }
+            System.out.println();
+        }
+    }
+
+    @Override
+    public String toString() {
+        return "Element{" +
+                "ID=" + Arrays.toString(ID) +
+                ", edgesWithBc=" + Arrays.toString(edgesWithBc) +
+                '}';
+    }
 }
