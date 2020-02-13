@@ -9,8 +9,20 @@ public class Main {
         try {
             GlobalData globalData = new GlobalData("src/grid.json");
             Grid grid = new Grid(globalData);
-            grid.getNodeAt(7);
-            grid.getElementAt(1);
+            grid.getNodeAt(1);
+            grid.getElementAt(0);
+            grid.getElement(0).print();
+            grid.getElement(0).printJacobian();
+
+
+//          print H matrix ::
+//            for (int i = 0; i < 4; i++) {
+//                for (int j = 0; j < 4; j++) {
+//                    System.out.print(grid.getElement(0).getLocalHMatrix()[i][j] + "\t\t");
+//                }
+//                System.out.println();
+//            }
+
         } catch (IOException e) {
             System.out.println("File not found!");
         }

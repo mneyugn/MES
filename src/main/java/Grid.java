@@ -97,5 +97,9 @@ public class Grid {
         return nodes[id].getY();
     }
 
+    Element getElement(int id) {
+        return elements[id];
+    }
+
 }
 
