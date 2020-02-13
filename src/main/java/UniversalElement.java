@@ -43,27 +43,34 @@ public class UniversalElement {
             dNdEtaMatrix[i][2] = 0.25 * (1 + ksi);
             dNdEtaMatrix[i][3] = 0.25 * (1 - ksi);
 
-            NiMatrix[i][0] = localN1(integrationPoints[i]);
-            NiMatrix[i][1] = localN2(integrationPoints[i]);
-            NiMatrix[i][2] = localN3(integrationPoints[i]);
-            NiMatrix[i][3] = localN4(integrationPoints[i]);
+            NiMatrix[i][0] = localShapeFunction1(integrationPoints[i]);
+            NiMatrix[i][1] = localShapeFunction2(integrationPoints[i]);
+            NiMatrix[i][2] = localShapeFunction3(integrationPoints[i]);
+            NiMatrix[i][3] = localShapeFunction4(integrationPoints[i]);
         }
 
     }
 
-    private double localN1(IntegrationPoint integrationPoint) {
+    static double[] niValuesVector(IntegrationPoint integrationPoint) {
+        return new double[]{localShapeFunction1(integrationPoint),
+                            localShapeFunction2(integrationPoint),
+                            localShapeFunction3(integrationPoint),
+                            localShapeFunction4(integrationPoint)};
+    }
+
+    private static double localShapeFunction1(IntegrationPoint integrationPoint) {
         return 0.25 * (1 - integrationPoint.getKsi()) * (1 - integrationPoint.getEta());
     }
 
-    private double localN2(IntegrationPoint integrationPoint) {
+    private static double localShapeFunction2(IntegrationPoint integrationPoint) {
         return 0.25 * (1 + integrationPoint.getKsi()) * (1 - integrationPoint.getEta());
     }
 
-    private double localN3(IntegrationPoint integrationPoint) {
+    private static double localShapeFunction3(IntegrationPoint integrationPoint) {
         return 0.25 * (1 + integrationPoint.getKsi()) * (1 + integrationPoint.getEta());
     }
 
-    private double localN4(IntegrationPoint integrationPoint) {
+    private static double localShapeFunction4(IntegrationPoint integrationPoint) {
         return 0.25 * (1 - integrationPoint.getKsi()) * (1 + integrationPoint.getEta());
     }
 

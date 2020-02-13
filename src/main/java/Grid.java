@@ -58,6 +58,7 @@ public class Grid {
 
     private void completeElements() {
         int index = 0;
+        boolean[] edgesWithBc;
 
         int noElementsW = nW - 1;
         int noElementsH = nH - 1;
@@ -70,7 +71,11 @@ public class Grid {
                 int n4 = i * nH + j + 1;        // top-right
 
                 nodesOfElement = new Node[]{nodes[n1], nodes[n2], nodes[n3], nodes[n4]};
-                elements[index++] = new Element(n1, n2, n3, n4, nodesOfElement);
+                edgesWithBc = new boolean[]{nodes[n1].isBC()&&nodes[n2].isBC(), //bottom
+                                            nodes[n2].isBC()&&nodes[n3].isBC(), //right
+                                            nodes[n3].isBC()&&nodes[n4].isBC(), //top
+                                            nodes[n4].isBC()&&nodes[n1].isBC()};//left
+                elements[index++] = new Element(n1, n2, n3, n4, nodesOfElement, edgesWithBc);
             }
         }
     }

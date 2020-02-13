@@ -16,7 +16,7 @@ public class GlobalData {
     static Double W;// szerokość siatki
     static Integer nH;// ilość węzłów - wysokość
     static Integer nW;// ilość węzłów - szerokość
-    static Double cw;
+    static Double specificHeat;
     public static Double k; //
     static Double ro;
 
@@ -42,7 +42,7 @@ public class GlobalData {
         W = (Double)jo.get("W");
         nH = ((Long)jo.get("nH")).intValue();
         nW = ((Long)jo.get("nW")).intValue();
-        cw = ((Long)jo.get("specific heat")).doubleValue(); // ciepło właściwe
+        specificHeat = ((Long)jo.get("specific heat")).doubleValue(); // ciepło właściwe
         k = ((Long)jo.get("conductivity")).doubleValue(); // przewodność
         ro = ((Long)jo.get("density")).doubleValue(); // gęstość
 

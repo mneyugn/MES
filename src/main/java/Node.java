@@ -3,7 +3,8 @@ public class Node {
     private double T;   // temperatura
     private boolean BC; // warunek brzegowy (0/1)
 
-    public Node( double x, double y, double t, boolean BC) {
+
+    public Node(double x, double y, double t, boolean BC) {
 //        ID = id;
         X = x;
         Y = y;
@@ -27,5 +28,9 @@ public class Node {
 
     public double getY() {
         return Y;
+    }
+
+    public boolean isBC() {
+        return BC;
     }
 }

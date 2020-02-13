@@ -6,25 +6,34 @@ import java.util.Arrays;
 public class Element {
     private static final int NUM_OF_INTEGRATION_POINTS_2_D = GlobalData.NUM_OF_INTEGRATION_POINTS_2D;
     private static final int NUM_OF_SHAPE_FUNCTIONS = GlobalData.NUM_OF_SHAPE_FUNCTIONS;
+    private static final int NUM_OF_SIDES_IN_ELEMENT = 4;
     private int[] ID;
     private double[][][] jacobian; // [integration point num][][] - Jacobi matrix for each integration point
     private Node[] nodes;
+    boolean[] edgesWithBc;
     private double[] detJ2D;
     private double[][] localHMatrix;
+    private double[][] localCMatrix;
+
 
     public double[][] getLocalHMatrix() {
         return localHMatrix;
     }
 
 
-
-    Element(int n1, int n2, int n3, int n4, Node[] nodes) {
+    Element(int n1, int n2, int n3, int n4, Node[] nodes, boolean[] edgesWithBc) {
         this.ID = new int[]{n1, n2, n3, n4};
 
         this.nodes = nodes;
+        this.edgesWithBc = edgesWithBc;
         detJ2D = new double[NUM_OF_INTEGRATION_POINTS_2_D];
         jacobian = new double[4][2][2];
         localHMatrix = new double[NUM_OF_SHAPE_FUNCTIONS][NUM_OF_SHAPE_FUNCTIONS];
+        localCMatrix = new double[NUM_OF_SHAPE_FUNCTIONS][NUM_OF_SHAPE_FUNCTIONS];
+        calculateAll();
+    }
+
+    private void calculateAll() {
         calculateJacobians2D();
         calculateLocalHMatrix();
         calculateLocalCMatrix();
@@ -107,8 +116,8 @@ public class Element {
         double w1, w2;
         RealMatrix subLocalHMatrixSum = new Array2DRowRealMatrix(new double[4][4]);
         for (int i = 0; i < NUM_OF_INTEGRATION_POINTS_2_D; i++) {
-            w1 = UniversalElement.integrationPoints[i].getKsiWeight();
-            w2 = UniversalElement.integrationPoints[i].getEtaWeight();
+            w1 = UniversalElement.integrationPoints[i].getWeight1();
+            w2 = UniversalElement.integrationPoints[i].getWeight2();
 
             subLocalHMatrixSum = subLocalHMatrixSum.add(subLocalHMatrixTmp[i].scalarMultiply(w1 * w2 * detJ2D[i]));
         }
@@ -136,23 +145,68 @@ public class Element {
     }
 
     private void calculateLocalCMatrix() {
+        RealMatrix subLocalCMatrixSumTmp = new Array2DRowRealMatrix(new double[4][4]);
         for (int i = 0; i < NUM_OF_INTEGRATION_POINTS_2_D; i++) {
+            // {N}{N}T
             RealMatrix niVector = new Array2DRowRealMatrix(UniversalElement.NiMatrix[i]);
             RealMatrix niResultMatrix = niVector.multiply(niVector.transpose());
 
-
-
-
-
+            //{N}{N}T * detJ
+            subLocalCMatrixSumTmp = subLocalCMatrixSumTmp.add(niResultMatrix.scalarMultiply(detJ2D[i]));
         }
+        // sum of sub-local C matrices multiplied by specific heat and ro
+        localCMatrix = subLocalCMatrixSumTmp.scalarMultiply(GlobalData.specificHeat * GlobalData.ro).getData();
+    }
 
+    void calculatePVector() {
 
     }
-    @Override
-    public String toString() {
-        return "Element{" +
-                "ID=" + Arrays.toString(ID) +
-                '}';
+
+    void calculateHbc() {
+        RealMatrix localHbcMatrix = new Array2DRowRealMatrix(new double[4][4]);
+
+        IntegrationPoint[][] bcpc = new IntegrationPoint[4][2];
+        for (int i = 0; i < 4; i++) {
+            bcpc[i] = new IntegrationPoint[2];
+        }
+        bcpc[0][0] = new IntegrationPoint(-1 / Math.sqrt(3), -1);
+        bcpc[0][1] = new IntegrationPoint(1 / Math.sqrt(3), -1);
+
+        bcpc[1][0] = new IntegrationPoint(1, -1 / Math.sqrt(3));
+        bcpc[1][1] = new IntegrationPoint(1, 1 / Math.sqrt(3));
+
+        bcpc[2][0] = new IntegrationPoint(1 / Math.sqrt(3), 1);
+        bcpc[2][1] = new IntegrationPoint(-1 / Math.sqrt(3), 1);
+
+        bcpc[3][0] = new IntegrationPoint(-1, 1 / Math.sqrt(3));
+        bcpc[3][1] = new IntegrationPoint(-1, -1 / Math.sqrt(3));
+
+
+        for (int i = 0; i < NUM_OF_SIDES_IN_ELEMENT; i++) {
+            if (edgesWithBc[i]) {
+                Node bc1 = nodes[i];
+                Node bc2 = nodes[(i + 1) % 4];
+
+                double distance = Math.sqrt(Math.pow((bc1.getX() - bc2.getX()), 2) + Math.pow((bc1.getY() - bc2.getY()), 2)) / 2;
+                double detJ1D = distance / 2;
+
+                // Hbc = alfa {N}{N}T * w
+                // Hbc1     {N}{N}T * w
+                RealMatrix subHbcMatrix1tmp = new Array2DRowRealMatrix(UniversalElement.niValuesVector(bcpc[i][0]));
+                RealMatrix subHhbcResultMatrix1Tmp = subHbcMatrix1tmp.multiply(subHbcMatrix1tmp.transpose()).scalarMultiply(bcpc[i][0].getWeight1());
+                // Hbc2     {N}{N}T * w
+                RealMatrix subHbcMatrix2tmp = new Array2DRowRealMatrix(UniversalElement.niValuesVector(bcpc[i][1]));
+                RealMatrix subHhbcResultMatrix2Tmp = subHbcMatrix1tmp.multiply(subHbcMatrix2tmp.transpose()).scalarMultiply(bcpc[i][1].getWeight2());
+
+                // alfa*(Hbc1 + Hbc2)*detJ1D
+                RealMatrix hbcForCurrenSide = subHhbcResultMatrix1Tmp.add(subHhbcResultMatrix2Tmp);
+                hbcForCurrenSide = hbcForCurrenSide.scalarMultiply(GlobalData.alfa * detJ1D);
+
+                // localHbcMatrix - sum of sub-local Hbc matrices
+                localHbcMatrix = localHbcMatrix.add(hbcForCurrenSide);
+            }
+            local
+        }
     }
 
 }
