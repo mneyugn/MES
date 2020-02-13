@@ -4,8 +4,15 @@ public class Node {
     private boolean BC; // warunek brzegowy (0/1)
 
 
+    public void setT(double t) {
+        T = t;
+    }
+
+    public double getT() {
+        return T;
+    }
+
     public Node(double x, double y, double t, boolean BC) {
-//        ID = id;
         X = x;
         Y = y;
         T = t;

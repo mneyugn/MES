@@ -7,7 +7,7 @@ import java.io.IOException;
 
 public class GlobalData {
 
-    static Double t0;  // temperatura początkowa
+    static Double initialTemp;  // temperatura początkowa
     static Double simulationTime;  // czas symulacji
     static Double stepTime;    // czas kroku czasowego
     static Double ambientTemperature;  // tempratura otoczenia
@@ -22,8 +22,8 @@ public class GlobalData {
 
     static int nN; // ilość węzłów
     static int nE; // ilość elementów
-    double dH;
-    double dW;
+    static double dH;
+    static double dW;
     static final int NUM_OF_INTEGRATION_POINTS_2D = 4;
     static final int NUM_OF_SHAPE_FUNCTIONS = 4;
 
@@ -33,7 +33,7 @@ public class GlobalData {
         // typecasting obj to JSONObject
         JSONObject jo = (JSONObject) obj;
 
-        t0 = ((Long)jo.get("initial temperature")).doubleValue();
+        initialTemp = ((Long)jo.get("initial temperature")).doubleValue();
         simulationTime = ((Long)jo.get("simulation time")).doubleValue();
         stepTime = ((Long)jo.get("simulation step time")).doubleValue();
         ambientTemperature = ((Long)jo.get("ambient temperature")).doubleValue();
@@ -46,8 +46,8 @@ public class GlobalData {
         k = ((Long)jo.get("conductivity")).doubleValue(); // przewodność
         ro = ((Long)jo.get("density")).doubleValue(); // gęstość
 
-        this.nN = nH * nW;
-        this.nE = (nH - 1) * (nW - 1);
+        nN = nH * nW;
+        nE = (nH - 1) * (nW - 1);
         dH = H / (nH - 1);
         dW = W / (nW - 1);
 

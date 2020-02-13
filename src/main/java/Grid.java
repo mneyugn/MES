@@ -1,43 +1,46 @@
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.apache.commons.math3.linear.MatrixUtils;
+import org.apache.commons.math3.linear.RealMatrix;
+
 public class Grid {
-    Node[] nodes;
-    Element[] elements;
+    private Node[] nodes;
+    private Element[] elements;
 
-    double H;
-    double W;
-    // ilość węzłów na wysokość i na szerokość
-    int nH;
-    int nW;
+    private double H;
+    private double W;
 
-    // ilość węzłów, liczba elementów
-    private int nN, nE;
+    private int nH;
+    private int nW;
 
     private double dH;
     private double dW;
-    double t0;
 
-    private UniversalElement universalElement;
+    private double initialTemp;
 
-    Grid(GlobalData globalData) {
+    private double[][] globalH;
+    private double[][] globalC;
+    private double[] globalP;
+
+    Grid() {
         this.nodes = new Node[GlobalData.nN];
-        this.elements = new Element[globalData.nE];
-        this.dH = globalData.dH;
-        this.dW = globalData.dW;
-        universalElement = new UniversalElement();
-
-        universalElement.print();
-
-        System.out.println(universalElement.getElement(1, 2));
-        createGrid(GlobalData.H, GlobalData.W, GlobalData.nH, GlobalData.nW, GlobalData.nN, GlobalData.nE, GlobalData.t0);
+        this.elements = new Element[GlobalData.nE];
+        this.dH = GlobalData.dH;
+        this.dW = GlobalData.dW;
+        this.H = GlobalData.H;
+        this.W = GlobalData.W;
+        this.nH = GlobalData.nH;
+        this.nW = GlobalData.nW;
+        this.initialTemp = GlobalData.initialTemp;
+        new UniversalElement();
+        this.globalH = new double[GlobalData.nN][GlobalData.nN];
+        this.globalC = new double[GlobalData.nN][GlobalData.nN];
+        this.globalP = new double[GlobalData.nN];
+        createGrid();
+        startSimulation();
     }
 
-    void createGrid(double h, double w, int nH, int nW, int nN, int nE, double t0) {
-        H = h;
-        W = w;
-        this.nH = nH;
-        this.nW = nW;
-        this.nN = nN;
-        this.nE = nE;
-        this.t0 = t0;
+
+    private void createGrid() {
         completeNodes();
         completeElements();
         agregate();
@@ -46,12 +49,12 @@ public class Grid {
 
     private void completeNodes() {
         int index = 0;
-        boolean bc;
+        boolean isBc;
 
         for (double x = 0; x <= W; x += dW)
             for (double y = 0; y <= H; y += dH) {
-                bc = isBoundary(x, y);
-                nodes[index] = new Node(x, y, t0, bc);
+                isBc = isBoundary(x, y);
+                nodes[index] = new Node(x, y, initialTemp, isBc);
                 index++;
             }
     }
@@ -73,24 +76,20 @@ public class Grid {
 
                 nodesOfElement = new Node[]{nodes[n1], nodes[n2], nodes[n3], nodes[n4]};
                 edgesWithBc = new boolean[]{nodes[n1].isBC() && nodes[n2].isBC(), //bottom
-                                            nodes[n2].isBC() && nodes[n3].isBC(), //right
-                                            nodes[n3].isBC() && nodes[n4].isBC(), //top
-                                            nodes[n4].isBC() && nodes[n1].isBC()};//left
+                        nodes[n2].isBC() && nodes[n3].isBC(), //right
+                        nodes[n3].isBC() && nodes[n4].isBC(), //top
+                        nodes[n4].isBC() && nodes[n1].isBC()};//left
                 elements[index++] = new Element(n1, n2, n3, n4, nodesOfElement, edgesWithBc);
             }
         }
     }
 
-    void agregate() {
-        double[][] globalH = new double[GlobalData.nN][GlobalData.nN];
-        double[][] globalC = new double[GlobalData.nN][GlobalData.nN];
-        double[] globalP = new double[GlobalData.nN];
-
+    private void agregate() {
         //petla for po wszystkich węzłach siatki
         for (int i = 0; i < GlobalData.nE; i++) {
             //pobieram id wszystkich wezłów siatki
             int[] indexTab = elements[i].getID();
-
+            Element currentElement = elements[i];
             //dodaje poszczegolne elementy do macierzy globalnej H wykorzystując id węzłów
             for (int y = 0; y < 4; y++) {
                 //petla for po kolumnach macierzy H danego elementu
@@ -99,18 +98,49 @@ public class Grid {
                     //dodajemy element do H zgodnie z id węzłów
                     int index_row = indexTab[y];
                     int index_column = indexTab[x];
-                    globalH[index_row][index_column] += elements[i].getLocalHMatrix()[y][x];
-                    globalC[index_row][index_column] += elements[i].getLocalCMatrix()[y][x];
+                    globalH[index_row][index_column] += currentElement.getLocalHMatrix()[y][x] + currentElement.getLocalHbcMatrix()[y][x];
+                    globalC[index_row][index_column] += currentElement.getLocalCMatrix()[y][x];
                 }
             }
         }
-        System.out.println(globalH.length + "\t\t" + globalH[1].length + "\t\t P " + globalP.length);
-        for (double doubles : globalP) {
-            System.out.print(doubles + "\t\t");
-//            for (double aDouble : doubles) {
-//                System.out.print(aDouble + "\t\t");
-//            }
-            System.out.println();
+    }
+
+    void startSimulation() {
+
+        double[] t0Vector = new double[nodes.length];
+
+        double dTau = GlobalData.stepTime;
+        int iterationCount = new Double(GlobalData.simulationTime / dTau).intValue();
+        for (int i = 0; i < iterationCount; i++) {
+            for (int j = 0; j < t0Vector.length; j++) {
+                t0Vector[j] = nodes[j].getT();
+            }
+            //[H] = [H] + [C]/dTau
+            RealMatrix globalHtmp = new Array2DRowRealMatrix(globalH);
+            RealMatrix globalCtmp = new Array2DRowRealMatrix(globalC);
+            RealMatrix globalMatrix = globalHtmp.add(globalCtmp.scalarMultiply(1 / dTau));
+
+            //{p} = {p} + {[C]/dTau} * {t_0}
+            RealMatrix t0VectorTmp = new Array2DRowRealMatrix(t0Vector);
+            RealMatrix vectorPTmp = new Array2DRowRealMatrix(globalP);
+            RealMatrix globalVector = vectorPTmp.add(globalCtmp.scalarMultiply(1 / dTau).multiply(t0VectorTmp));
+
+            // {t1} = [H]-1  *  {t0}
+            double[] t1Vector = MatrixUtils.inverse(globalMatrix).multiply(globalVector).getColumn(0);
+
+            double minTemp = t1Vector[0];
+            double maxTemp = t1Vector[0];
+
+            for (double v : t1Vector) {
+                if (v < minTemp) minTemp = v;
+                if (v > maxTemp) maxTemp = v;
+            }
+
+            System.out.println("Iteration:\t" + (i+1) +"\tMin:\t" + minTemp + "\t\tMax: \t" + maxTemp);
+
+            for (int j = 0; j < t0Vector.length; j++) {
+                nodes[j].setT(t1Vector[j]);
+            }
         }
     }
 

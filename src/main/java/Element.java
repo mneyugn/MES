@@ -1,8 +1,6 @@
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.RealMatrix;
 
-import java.util.Arrays;
-
 import static java.lang.Math.pow;
 import static java.lang.Math.sqrt;
 
@@ -16,6 +14,7 @@ public class Element {
     boolean[] edgesWithBc;
     private double[] detJ2D;
     private double[][] localHMatrix;
+    private double[][] localHbcMatrix;
     private double[][] localCMatrix;
 
     public double[] getLocalPVector() {
@@ -47,14 +46,15 @@ public class Element {
         detJ2D = new double[NUM_OF_INTEGRATION_POINTS_2_D];
         jacobian = new double[4][2][2];
         localHMatrix = new double[NUM_OF_SHAPE_FUNCTIONS][NUM_OF_SHAPE_FUNCTIONS];
+        localHbcMatrix = new double[NUM_OF_SHAPE_FUNCTIONS][NUM_OF_SHAPE_FUNCTIONS];
         localCMatrix = new double[NUM_OF_SHAPE_FUNCTIONS][NUM_OF_SHAPE_FUNCTIONS];
         calculateAll();
     }
 
     private void calculateAll() {
         calculateJacobians2D();
-        RealMatrix HWithoutHbc = calculateLocalHMatrixWithoutHbc();
-        calculateHbcMatrixAndPVector(HWithoutHbc);
+        calculateLocalHMatrix();
+        calculateHbcMatrixAndPVector();
         calculateLocalCMatrix();
     }
 
@@ -87,7 +87,7 @@ public class Element {
         }
     }
 
-    private RealMatrix calculateLocalHMatrixWithoutHbc() {
+    private void calculateLocalHMatrix() {
         // k( {dN/dx}{dN/dx}T
         // dN/dx =
         RealMatrix[] subLocalHMatrixTmp = new RealMatrix[4];
@@ -120,9 +120,8 @@ public class Element {
 
             subLocalHMatrixSum = subLocalHMatrixSum.add(subLocalHMatrixTmp[i].scalarMultiply(weight1 * weight2 * detJ2D[i]));
         }
-
         //multiplication by k
-        return subLocalHMatrixSum.scalarMultiply(GlobalData.k);
+        localHMatrix = subLocalHMatrixSum.scalarMultiply(GlobalData.k).getData();
     }
 
 
@@ -160,8 +159,8 @@ public class Element {
         localCMatrix = subLocalCMatrixSumTmp.scalarMultiply(GlobalData.specificHeat * GlobalData.ro).getData();
     }
 
-    void calculateHbcMatrixAndPVector(RealMatrix localHWithoutHbc) {
-        RealMatrix localHbcMatrix = new Array2DRowRealMatrix(new double[4][4]);
+    private void calculateHbcMatrixAndPVector() {
+        RealMatrix localHbcMatrixTmp = new Array2DRowRealMatrix(new double[4][4]);
         RealMatrix localPVectorTmp = new Array2DRowRealMatrix(new double[4]);
 
         IntegrationPoint[][] bcpc = new IntegrationPoint[4][2];
@@ -188,7 +187,7 @@ public class Element {
                 Node bc1 = nodes[i];
                 Node bc2 = nodes[(i + 1) % 4];
 
-                double deltaX = sqrt(pow((bc1.getX() - bc2.getX()), 2) + pow((bc1.getY() - bc2.getY()), 2)) / 2;
+                double deltaX = sqrt(pow((bc1.getX() - bc2.getX()), 2) + pow((bc1.getY() - bc2.getY()), 2));
                 double detJ1D = deltaX / 2;
 
                 // HBC = alfa {N}{N}T * w
@@ -204,8 +203,8 @@ public class Element {
                 RealMatrix hbcForCurrenSide = subHbcResultMatrix1Tmp.add(subHbcResultMatrix2Tmp);
                 hbcForCurrenSide = hbcForCurrenSide.scalarMultiply(GlobalData.alfa * detJ1D);
 
-                // localHbcMatrix - sum of sub-local Hbc matrices
-                localHbcMatrix = localHbcMatrix.add(hbcForCurrenSide);
+                // localHbcMatrixTmp - sum of sub-local Hbc matrices
+                localHbcMatrixTmp = localHbcMatrixTmp.add(hbcForCurrenSide);
 
 
                 // P VECTOR
@@ -215,7 +214,7 @@ public class Element {
 
                 // Pbc2             {N}* w2
                 RealMatrix subPVector2tmp = new Array2DRowRealMatrix(UniversalElement.niValuesVector(bcpc[i][1]));
-                subPVector2tmp = subPVector2tmp.scalarMultiply(bcpc[i][0].getWeight1());
+                subPVector2tmp = subPVector2tmp.scalarMultiply(bcpc[i][0].getWeight2());
 
                 // Pbc1 + Pbc2
                 RealMatrix pForCurrenSide = subPVector1tmp.add(subPVector2tmp);
@@ -225,8 +224,8 @@ public class Element {
 
             }
         }
-        localHMatrix = localHWithoutHbc.add(localHbcMatrix).getData();
-        localPVector = localPVectorTmp.scalarMultiply(-1).getColumn(0);
+        localHbcMatrix = localHbcMatrixTmp.getData();
+        localPVector = localPVectorTmp.getColumn(0);
     }
 
 
@@ -248,11 +247,7 @@ public class Element {
         }
     }
 
-    @Override
-    public String toString() {
-        return "Element{" +
-                "ID=" + Arrays.toString(ID) +
-                ", edgesWithBc=" + Arrays.toString(edgesWithBc) +
-                '}';
+    public double[][] getLocalHbcMatrix() {
+        return localHbcMatrix;
     }
 }
