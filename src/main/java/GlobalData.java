@@ -20,8 +20,8 @@ public class GlobalData {
     public static Double k; //
     static Double ro;
 
-    int nN; // ilość węzłów
-    int nE; // ilość elementów
+    static int nN; // ilość węzłów
+    static int nE; // ilość elementów
     double dH;
     double dW;
     static final int NUM_OF_INTEGRATION_POINTS_2D = 4;

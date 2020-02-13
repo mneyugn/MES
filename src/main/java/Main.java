@@ -10,7 +10,7 @@ public class Main {
             GlobalData globalData = new GlobalData("src/grid.json");
             Grid grid = new Grid(globalData);
             grid.getNodeAt(1);
-            grid.getElementAt(0);
+            grid.getElementAt(6);
             grid.getElement(0).print();
             grid.getElement(0).printJacobian();
 

@@ -15,10 +15,10 @@ public class Grid {
     private double dW;
     double t0;
 
-    UniversalElement universalElement;
+    private UniversalElement universalElement;
 
     Grid(GlobalData globalData) {
-        this.nodes = new Node[globalData.nN];
+        this.nodes = new Node[GlobalData.nN];
         this.elements = new Element[globalData.nE];
         this.dH = globalData.dH;
         this.dW = globalData.dW;
@@ -27,7 +27,7 @@ public class Grid {
         universalElement.print();
 
         System.out.println(universalElement.getElement(1, 2));
-        createGrid(globalData.H, globalData.W, globalData.nH, globalData.nW, globalData.nN, globalData.nE, globalData.t0);
+        createGrid(GlobalData.H, GlobalData.W, GlobalData.nH, GlobalData.nW, GlobalData.nN, GlobalData.nE, GlobalData.t0);
     }
 
     void createGrid(double h, double w, int nH, int nW, int nN, int nE, double t0) {
@@ -40,6 +40,7 @@ public class Grid {
         this.t0 = t0;
         completeNodes();
         completeElements();
+        agregate();
     }
 
 
@@ -71,12 +72,45 @@ public class Grid {
                 int n4 = i * nH + j + 1;        // top-right
 
                 nodesOfElement = new Node[]{nodes[n1], nodes[n2], nodes[n3], nodes[n4]};
-                edgesWithBc = new boolean[]{nodes[n1].isBC()&&nodes[n2].isBC(), //bottom
-                                            nodes[n2].isBC()&&nodes[n3].isBC(), //right
-                                            nodes[n3].isBC()&&nodes[n4].isBC(), //top
-                                            nodes[n4].isBC()&&nodes[n1].isBC()};//left
+                edgesWithBc = new boolean[]{nodes[n1].isBC() && nodes[n2].isBC(), //bottom
+                                            nodes[n2].isBC() && nodes[n3].isBC(), //right
+                                            nodes[n3].isBC() && nodes[n4].isBC(), //top
+                                            nodes[n4].isBC() && nodes[n1].isBC()};//left
                 elements[index++] = new Element(n1, n2, n3, n4, nodesOfElement, edgesWithBc);
             }
+        }
+    }
+
+    void agregate() {
+        double[][] globalH = new double[GlobalData.nN][GlobalData.nN];
+        double[][] globalC = new double[GlobalData.nN][GlobalData.nN];
+        double[] globalP = new double[GlobalData.nN];
+
+        //petla for po wszystkich węzłach siatki
+        for (int i = 0; i < GlobalData.nE; i++) {
+            //pobieram id wszystkich wezłów siatki
+            int[] indexTab = elements[i].getID();
+
+            //dodaje poszczegolne elementy do macierzy globalnej H wykorzystując id węzłów
+            for (int y = 0; y < 4; y++) {
+                //petla for po kolumnach macierzy H danego elementu
+                globalP[indexTab[y]] += elements[i].getLocalPVector()[y];
+                for (int x = 0; x < 4; x++) {
+                    //dodajemy element do H zgodnie z id węzłów
+                    int index_row = indexTab[y];
+                    int index_column = indexTab[x];
+                    globalH[index_row][index_column] += elements[i].getLocalHMatrix()[y][x];
+                    globalC[index_row][index_column] += elements[i].getLocalCMatrix()[y][x];
+                }
+            }
+        }
+        System.out.println(globalH.length + "\t\t" + globalH[1].length + "\t\t P " + globalP.length);
+        for (double doubles : globalP) {
+            System.out.print(doubles + "\t\t");
+//            for (double aDouble : doubles) {
+//                System.out.print(aDouble + "\t\t");
+//            }
+            System.out.println();
         }
     }
 
