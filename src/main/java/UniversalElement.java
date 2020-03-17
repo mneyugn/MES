@@ -8,7 +8,7 @@ public class UniversalElement {
     static double[][] dNdKsiMatrix;
     static double[][] dNdEtaMatrix;
     static double[][] NiMatrix;
-    private IntegrationPoint[] integrationPoints;
+    static IntegrationPoint[] integrationPoints;
 
 
     public UniversalElement() {
@@ -33,37 +33,44 @@ public class UniversalElement {
             double ksi = integrationPoints[i].getKsi();
             double eta = integrationPoints[i].getEta();
 
-            dNdKsiMatrix[0][i] = -0.25 * (1 - eta);
-            dNdKsiMatrix[1][i] = 0.25 * (1 - eta);
-            dNdKsiMatrix[2][i] = 0.25 * (1 + eta);
-            dNdKsiMatrix[3][i] = -0.25 * (1 + eta);
+            dNdKsiMatrix[i][0] = -0.25 * (1 - eta);
+            dNdKsiMatrix[i][1] = 0.25 * (1 - eta);
+            dNdKsiMatrix[i][2] = 0.25 * (1 + eta);
+            dNdKsiMatrix[i][3] = -0.25 * (1 + eta);
 
-            dNdEtaMatrix[0][i] = -0.25 * (1 - ksi);
-            dNdEtaMatrix[1][i] = -0.25 * (1 + ksi);
-            dNdEtaMatrix[2][i] = 0.25 * (1 + ksi);
-            dNdEtaMatrix[3][i] = 0.25 * (1 - ksi);
+            dNdEtaMatrix[i][0] = -0.25 * (1 - ksi);
+            dNdEtaMatrix[i][1] = -0.25 * (1 + ksi);
+            dNdEtaMatrix[i][2] = 0.25 * (1 + ksi);
+            dNdEtaMatrix[i][3] = 0.25 * (1 - ksi);
 
-            NiMatrix[i][0] = localN1(integrationPoints[i]);
-            NiMatrix[i][1] = localN2(integrationPoints[i]);
-            NiMatrix[i][2] = localN3(integrationPoints[i]);
-            NiMatrix[i][3] = localN4(integrationPoints[i]);
+            NiMatrix[i][0] = localShapeFunction1(integrationPoints[i]);
+            NiMatrix[i][1] = localShapeFunction2(integrationPoints[i]);
+            NiMatrix[i][2] = localShapeFunction3(integrationPoints[i]);
+            NiMatrix[i][3] = localShapeFunction4(integrationPoints[i]);
         }
 
     }
 
-    private double localN1(IntegrationPoint integrationPoint) {
+    static double[] niValuesVector(IntegrationPoint integrationPoint) {
+        return new double[]{localShapeFunction1(integrationPoint),
+                            localShapeFunction2(integrationPoint),
+                            localShapeFunction3(integrationPoint),
+                            localShapeFunction4(integrationPoint)};
+    }
+
+    private static double localShapeFunction1(IntegrationPoint integrationPoint) {
         return 0.25 * (1 - integrationPoint.getKsi()) * (1 - integrationPoint.getEta());
     }
 
-    private double localN2(IntegrationPoint integrationPoint) {
+    private static double localShapeFunction2(IntegrationPoint integrationPoint) {
         return 0.25 * (1 + integrationPoint.getKsi()) * (1 - integrationPoint.getEta());
     }
 
-    private double localN3(IntegrationPoint integrationPoint) {
+    private static double localShapeFunction3(IntegrationPoint integrationPoint) {
         return 0.25 * (1 + integrationPoint.getKsi()) * (1 + integrationPoint.getEta());
     }
 
-    private double localN4(IntegrationPoint integrationPoint) {
+    private static double localShapeFunction4(IntegrationPoint integrationPoint) {
         return 0.25 * (1 - integrationPoint.getKsi()) * (1 + integrationPoint.getEta());
     }
 
@@ -79,6 +86,13 @@ public class UniversalElement {
 
     void print() {
         System.out.println("dN po dKsi");
+        for (int i = 0; i < 4; i++) {
+            for (int j = 0; j < 4;j++) {
+                System.out.print(dNdKsiMatrix[i][j] + "\t\t");
+            }
+            System.out.println();
+        }
+        System.out.println();
         for (double[] ndKsiMatrix : dNdKsiMatrix) {
             for (double ksiMatrix : ndKsiMatrix) {
                 System.out.print(ksiMatrix + "\t \t");
@@ -87,7 +101,8 @@ public class UniversalElement {
         }
         System.out.println();
 
-        System.out.println("dN po dKsi");
+        System.out.println("dN po dEta");
+
         for (double[] ndEtaMatrix : dNdEtaMatrix) {
             for (double etaMatrix : ndEtaMatrix) {
                 System.out.print(etaMatrix + "\t \t");
@@ -103,6 +118,7 @@ public class UniversalElement {
             }
             System.out.println();
         }
+        System.out.println('\n');
     }
 
     double getElement(int pc, int fk) {

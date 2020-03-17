@@ -1,25 +1,53 @@
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
+
+import java.io.FileReader;
+import java.io.IOException;
+
 public class GlobalData {
 
-    double H; // wysokość siatki
-    double W; // szerokość siatki
-    int nH; // ilość węzłów - wysokość
-    int nW; // ilość węzłów - szerokość
-    int nN; // ilość węzłów
-    int nE; // ilość elementów
-    double dH;
-    double dW;
-    double t0;
-    public static final int NUM_OF_INTEGRATION_POINTS_2D = 4;
-    public static final int NUM_OF_SHAPE_FUNCTIONS = 4;
+    static Double initialTemp;  // temperatura początkowa
+    static Double simulationTime;  // czas symulacji
+    static Double stepTime;    // czas kroku czasowego
+    static Double ambientTemperature;  // tempratura otoczenia
+    static Double alfa;
+    static Double H;// wysokość siatki
+    static Double W;// szerokość siatki
+    static Integer nH;// ilość węzłów - wysokość
+    static Integer nW;// ilość węzłów - szerokość
+    static Double specificHeat;
+    public static Double k; //
+    static Double ro;
 
-    public GlobalData(double h, double w, int nH, int nW, double t0) {
-        H = h;
-        W = w;
-        this.nH = nH;
-        this.nW = nW;
-        this.nN = nH * nW;
-        this.nE = (nH - 1) * (nW - 1);
-        this.t0 = t0;
+    static int nN; // ilość węzłów
+    static int nE; // ilość elementów
+    static double dH;
+    static double dW;
+    static final int NUM_OF_INTEGRATION_POINTS_2D = 4;
+    static final int NUM_OF_SHAPE_FUNCTIONS = 4;
+
+    public GlobalData(String path) throws IOException, ParseException {
+        Object obj = new JSONParser().parse(new FileReader(path));
+
+        // typecasting obj to JSONObject
+        JSONObject jo = (JSONObject) obj;
+
+        initialTemp = ((Long)jo.get("initial temperature")).doubleValue();
+        simulationTime = ((Long)jo.get("simulation time")).doubleValue();
+        stepTime = ((Long)jo.get("simulation step time")).doubleValue();
+        ambientTemperature = ((Long)jo.get("ambient temperature")).doubleValue();
+        alfa = ((Long)jo.get("alfa")).doubleValue();
+        H = (Double)jo.get("H");
+        W = (Double)jo.get("W");
+        nH = ((Long)jo.get("nH")).intValue();
+        nW = ((Long)jo.get("nW")).intValue();
+        specificHeat = ((Long)jo.get("specific heat")).doubleValue(); // ciepło właściwe
+        k = ((Long)jo.get("conductivity")).doubleValue(); // przewodność
+        ro = ((Long)jo.get("density")).doubleValue(); // gęstość
+
+        nN = nH * nW;
+        nE = (nH - 1) * (nW - 1);
         dH = H / (nH - 1);
         dW = W / (nW - 1);
 
